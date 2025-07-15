@@ -10,6 +10,24 @@ from docx.shared import Pt
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 ARQUIVO_ESTOQUE = "estoque.csv"
 
+def atualizar_rodape(label, estoque):
+    total = len(estoque)
+    if total == 0:
+        media_preco = 0
+        soma_preco = 0
+        media_ano = 0
+    else:
+        soma_preco = sum(c['Preço'] for c in estoque)
+        media_preco = soma_preco / total
+        media_ano = sum(c['Ano'] for c in estoque) / total
+    texto = (
+        f"Total de veículos: {total}    |    "
+        f"Média de preço: {locale.currency(media_preco, grouping=True)}    |    "
+        f"Valor total: {locale.currency(soma_preco, grouping=True)}    |    "
+        f"Média de ano: {media_ano:.0f}"
+    )
+    label.config(text=texto)
+
 def centralizar_janela(janela, largura, altura):
     janela.update_idletasks()
     largura_tela = janela.winfo_screenwidth()
@@ -49,13 +67,15 @@ def salvar_estoque(estoque):
         for carro in estoque:
             writer.writerow([carro["Modelo"], carro["Ano"], carro["Preço"]])
 
-def atualizar_treeview(tree, estoque):
+def atualizar_treeview(tree, estoque, rodape=None):
     tree.delete(*tree.get_children())
     for idx, carro in enumerate(estoque):
         preco = locale.currency(carro["Preço"], grouping=True)
         tree.insert("", "end", iid=idx, text=idx, values=(carro["Modelo"], carro["Ano"], preco))
+    if rodape is not None:
+        atualizar_rodape(rodape, estoque)
 
-def adicionar_carro_gui(tree, estoque):
+def adicionar_carro_gui(tree, estoque, rodape):
     def salvar():
         modelo = entry_modelo.get().strip()
         ano = entry_ano.get().strip()
@@ -79,7 +99,7 @@ def adicionar_carro_gui(tree, estoque):
             return
         estoque.append({"Modelo": modelo, "Ano": ano, "Preço": preco})
         salvar_estoque(estoque)
-        atualizar_treeview(tree, estoque)
+        atualizar_treeview(tree, estoque, rodape)
         win_add.destroy()
         messagebox.showinfo("Sucesso", f"Carro '{modelo}' adicionado!")
     win_add = Toplevel()
@@ -98,7 +118,7 @@ def adicionar_carro_gui(tree, estoque):
     entry_preco.grid(row=2, column=1, padx=8, pady=8)
     Button(win_add, text="Salvar", font=('Arial', 12), width=13, command=salvar).grid(row=3, column=0, columnspan=2, pady=14)
 
-def editar_carro_gui(tree, estoque):
+def editar_carro_gui(tree, estoque, rodape):
     selected = tree.focus()
     if not selected:
         messagebox.showerror("Erro", "Selecione um carro para editar.")
@@ -130,7 +150,7 @@ def editar_carro_gui(tree, estoque):
         carro["Ano"] = ano
         carro["Preço"] = preco
         salvar_estoque(estoque)
-        atualizar_treeview(tree, estoque)
+        atualizar_treeview(tree, estoque, rodape)
         win_edit.destroy()
         messagebox.showinfo("Sucesso", "Carro editado com sucesso!")
     win_edit = Toplevel()
@@ -152,7 +172,7 @@ def editar_carro_gui(tree, estoque):
     entry_preco.grid(row=2, column=1, padx=8, pady=8)
     Button(win_edit, text="Salvar", font=('Arial', 12), width=13, command=salvar).grid(row=3, column=0, columnspan=2, pady=14)
 
-def excluir_carro_gui(tree, estoque):
+def excluir_carro_gui(tree, estoque, rodape):
     selected = tree.focus()
     if not selected:
         messagebox.showerror("Erro", "Selecione um carro para excluir.")
@@ -163,7 +183,7 @@ def excluir_carro_gui(tree, estoque):
     if confirm:
         estoque.pop(idx)
         salvar_estoque(estoque)
-        atualizar_treeview(tree, estoque)
+        atualizar_treeview(tree, estoque, rodape)
         messagebox.showinfo("Sucesso", "Carro excluído.")
 
 def gerar_arquivo_para_impressao(estoque):
@@ -221,8 +241,15 @@ def main():
     frame.pack(fill=BOTH, expand=True)
     columns = ("Modelo", "Ano", "Preço")
     tree = ttk.Treeview(frame, columns=columns, show="headings")
-    # Estado para ordenação: True=crescente, False=decrescente
     sort_state = {"Ano": True, "Preço": True}
+
+    rodape = Label(
+    root,
+    font=('Arial', 13, "bold"),
+    anchor="center",  
+    justify="center",  
+    )
+    rodape.pack(fill="x")
 
     def sort_column(col):
         reverse = not sort_state[col]
@@ -231,7 +258,7 @@ def main():
             estoque.sort(key=lambda x: x['Ano'], reverse=reverse)
         elif col == "Preço":
             estoque.sort(key=lambda x: x['Preço'], reverse=reverse)
-        atualizar_treeview(tree, estoque)
+        atualizar_treeview(tree, estoque, rodape)
 
     tree.heading("Modelo", text="Modelo", anchor="center")
     tree.heading("Ano", text="Ano", anchor="center", command=lambda: sort_column("Ano"))
@@ -243,12 +270,12 @@ def main():
     scrollbar = ttk.Scrollbar(frame, orient=VERTICAL, command=tree.yview)
     tree.configure(yscroll=scrollbar.set)
     scrollbar.pack(side=RIGHT, fill=Y)
-    atualizar_treeview(tree, estoque)
+    atualizar_treeview(tree, estoque, rodape)
     btn_frame = Frame(root)
     btn_frame.pack(pady=12)
-    Button(btn_frame, text="Adicionar Carro", font=('Arial', 13), width=18, command=lambda: adicionar_carro_gui(tree, estoque)).grid(row=0, column=0, padx=8)
-    Button(btn_frame, text="Editar Carro", font=('Arial', 13), width=18, command=lambda: editar_carro_gui(tree, estoque)).grid(row=0, column=1, padx=8)
-    Button(btn_frame, text="Excluir Carro", font=('Arial', 13), width=18, command=lambda: excluir_carro_gui(tree, estoque)).grid(row=0, column=2, padx=8)
+    Button(btn_frame, text="Adicionar Carro", font=('Arial', 13), width=18, command=lambda: adicionar_carro_gui(tree, estoque, rodape)).grid(row=0, column=0, padx=8)
+    Button(btn_frame, text="Editar Carro", font=('Arial', 13), width=18, command=lambda: editar_carro_gui(tree, estoque, rodape)).grid(row=0, column=1, padx=8)
+    Button(btn_frame, text="Excluir Carro", font=('Arial', 13), width=18, command=lambda: excluir_carro_gui(tree, estoque, rodape)).grid(row=0, column=2, padx=8)
     Button(btn_frame, text="Gerar Arquivo para Impressão", font=('Arial', 13), width=24, command=lambda: gerar_arquivo_para_impressao(estoque)).grid(row=0, column=3, padx=8)
     Button(btn_frame, text="Sair", font=('Arial', 13), width=10, command=root.destroy).grid(row=0, column=4, padx=8)
     root.mainloop()
