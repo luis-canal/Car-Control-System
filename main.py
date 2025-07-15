@@ -5,6 +5,7 @@ from tkinter import *
 from tkinter import messagebox, ttk
 from docx import Document
 from docx.shared import Cm
+from docx.shared import Pt
 
 locale.setlocale(locale.LC_ALL, 'pt_BR.UTF-8')
 ARQUIVO_ESTOQUE = "estoque.csv"
@@ -184,6 +185,9 @@ def gerar_arquivo_para_impressao(estoque):
     col_widths = [Cm(7.7), Cm(2.5), Cm(3.8), Cm(0.3), Cm(0.3), Cm(0.3)]
     for i, width in enumerate(col_widths):
         hdr_cells[i].width = width
+    for cell in hdr_cells:
+        for p in cell.paragraphs:
+            p.paragraph_format.line_spacing = Pt(16)
     for carro in estoque:
         row_cells = tabela.add_row().cells
         row_cells[0].text = carro["Modelo"]
@@ -192,6 +196,9 @@ def gerar_arquivo_para_impressao(estoque):
         row_cells[3].text = ""
         row_cells[4].text = ""
         row_cells[5].text = ""
+        for cell in row_cells:
+            for p in cell.paragraphs:
+                p.paragraph_format.line_spacing = Pt(20)
     doc.add_paragraph("\n")
     nome_arquivo = "estoque_para_impressao.docx"
     doc.save(nome_arquivo)
@@ -201,7 +208,7 @@ def gerar_arquivo_para_impressao(estoque):
 def main():
     estoque = carregar_estoque()
     root = Tk()
-    root.title("Estoque de Veículos Usados - Loja")
+    root.title("Estoque de Veículos - Loja")
     root.geometry("750x430")
     # ---- ESTILO TREEVIEW ----
     style = ttk.Style(root)
