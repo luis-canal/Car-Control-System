@@ -83,7 +83,6 @@ def adicionar_carro_gui(tree, estoque):
         win_add.destroy()
         messagebox.showinfo("Sucesso", f"Carro '{modelo}' adicionado!")
     win_add = Toplevel()
-    win_add = Toplevel()
     win_add.title("Adicionar Carro")
     centralizar_janela(win_add, 350, 200)
     win_add.resizable(False, False)
@@ -222,9 +221,21 @@ def main():
     frame.pack(fill=BOTH, expand=True)
     columns = ("Modelo", "Ano", "Preço")
     tree = ttk.Treeview(frame, columns=columns, show="headings")
+    # Estado para ordenação: True=crescente, False=decrescente
+    sort_state = {"Ano": True, "Preço": True}
+
+    def sort_column(col):
+        reverse = not sort_state[col]
+        sort_state[col] = reverse
+        if col == "Ano":
+            estoque.sort(key=lambda x: x['Ano'], reverse=reverse)
+        elif col == "Preço":
+            estoque.sort(key=lambda x: x['Preço'], reverse=reverse)
+        atualizar_treeview(tree, estoque)
+
     tree.heading("Modelo", text="Modelo", anchor="center")
-    tree.heading("Ano", text="Ano", anchor="center")
-    tree.heading("Preço", text="Preço", anchor="center")
+    tree.heading("Ano", text="Ano", anchor="center", command=lambda: sort_column("Ano"))
+    tree.heading("Preço", text="Preço", anchor="center", command=lambda: sort_column("Preço"))
     tree.column("Modelo", width=320, anchor="center")
     tree.column("Ano", width=100, anchor="center")
     tree.column("Preço", width=170, anchor="center")
