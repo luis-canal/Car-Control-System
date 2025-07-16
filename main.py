@@ -109,8 +109,8 @@ def salvar_historico_venda(carro):
     with open(ARQUIVO_HISTORICO, "a", newline='', encoding="utf-8") as f:
         writer = csv.writer(f, delimiter=';')
         if novo_arquivo:
-            writer.writerow(["Modelo", "Ano", "Preço", "Data/Hora da venda"])
-        datahora = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            writer.writerow(["Modelo", "Ano", "Preço", "Data"])
+        datahora = datetime.now().strftime("%d/%m/%Y")
         writer.writerow([carro["Modelo"], carro["Ano"], carro["Preço"], datahora])
 
 def atualizar_treeview(tree, estoque, rodape=None):
@@ -307,7 +307,7 @@ def main():
     style.configure("Treeview", font=('Arial', 14), rowheight=38, foreground='black')
     style.layout("Treeview", [('Treeview.treearea', {'sticky': 'nswe'})])
     style.map('Treeview', background=[('selected', '#ececec')])
-    Label(root, text="Controle de Estoque de Veículos Usados", font=("Arial", 19, "bold")).pack(pady=10)
+    Label(root, text="Controle de Estoque de Veículos", font=("Arial", 19, "bold")).pack(pady=10)
     frame = Frame(root)
     frame.pack(fill=BOTH, expand=True)
     columns = ("Modelo", "Ano", "Preço")
